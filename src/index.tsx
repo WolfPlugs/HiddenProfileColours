@@ -31,7 +31,7 @@ const decodeBio = (bioString: string): Array<number> => {
 export async function start() {
 
   const mod = webpack.getByProps(["getMutualGuilds", "getUserProfile"]);
-
+  const mod2 =  await webpack.waitForModule(webpack.filters.bySource('"poggermode_enabled"'), {raw:true}).exports;
   inject.after(mod as any, "getUserProfile", (args, res) => {
     if (res) {
       const themeColors = decodeBio(res?.bio);
@@ -43,26 +43,26 @@ export async function start() {
     return res;
   });
 
-  inject.after(const mode = webpack.getBySource('"poggermode_enabled"', { raw: true }).exports, "Z", (args, res) => {
-    inject.after(res.find(m => m.section == "Profile Customization"), "element", (args, res) => {
-      inject.after(res.props.children.props.children.find(m => m?.props?.navigateToGuildIdentitySettings), "type", (args, res) => {
-        inject.after(res.props.children.props.children[0].props.children, "type", (args, res) => {
-          inject.after(res?.props?.children?.find?.(m => Array.isArray(m?.props?.children) && m?.props?.children?.some?.(im => im?.props?.children?.toString?.()?.includes("pendingColors")))?.props?.children?.find?.(pc => pc?.props?.children?.toString?.()?.includes("pendingColors")).props, "children", (args, res) => {
-            inject.after(res, "type", (args, res) => {
-              console.log(args, res);
-              //pushing to res.props.children.props.children should work here
-              return res;
-            });
-            return res;
-          });
-          return res;
-        });
-        return res;
-      });
-      return res;
-    });
-    return res;
-  });
+  // inject.after(mod2, "Z", (args, res) => {
+  //   inject.after(res.find(m => m.section == "Profile Customization"), "element", (args, res) => {
+  //     inject.after(res.props.children.props.children.find(m => m?.props?.navigateToGuildIdentitySettings), "type", (args, res) => {
+  //       inject.after(res.props.children.props.children[0].props.children, "type", (args, res) => {
+  //         inject.after(res?.props?.children?.find?.(m => Array.isArray(m?.props?.children) && m?.props?.children?.some?.(im => im?.props?.children?.toString?.()?.includes("pendingColors")))?.props?.children?.find?.(pc => pc?.props?.children?.toString?.()?.includes("pendingColors")).props, "children", (args, res) => {
+  //           inject.after(res, "type", (args, res) => {
+  //             console.log(args, res);
+  //             //pushing to res.props.children.props.children should work here
+  //             return res;
+  //           });
+  //           return res;
+  //         });
+  //         return res;
+  //       });
+  //       return res;
+  //     });
+  //     return res;
+  //   });
+  //   return res;
+  // });
 }
 
 export function stop(): void {
