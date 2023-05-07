@@ -1,51 +1,66 @@
-import { Injector, common, webpack, settings } from "replugged";
-import { ColorPicker } from "./settingsLoader";
+import { Injector, webpack } from "replugged";
 
 const inject = new Injector();
 
-const COLOR_REGEX =
-  /\u{e005b}\u{e0023}([\u{e0061}-\u{e0066}\u{e0041}-\u{e0046}\u{e0030}-\u{e0039}]+?)\u{e002c}\u{e0023}([\u{e0061}-\u{e0066}\u{e0041}-\u{e0046}\u{e0030}-\u{e0039}]+?)\u{e005d}/u;
-const UNICODE_OFFSET = 0xe0000;
-const HEX_BASE = 16;
-
-const parseColorString = (colorString: string): Array<number> => {
-  const hexValues = colorString.split(",").map((hex) => parseInt(hex.replace("#", "0x"), HEX_BASE));
-  return hexValues;
-};
+const COLOR_REGEX: RegExp = /\[(\#[0-9a-fA-F]{6})\s*,\s*(\#[0-9a-fA-F]{6})\]/;
 
 const decodeBio = (bioString: string): Array<number> => {
   if (!bioString) return [];
 
-  const match = bioString.match(COLOR_REGEX);
-  if (!match) return [];
+  const isDecodable: boolean = Boolean(
+    [...bioString].some((x) => x.codePointAt(0) > 0xe0000 && x.codePointAt(0) < 0xe007f)
+  );
+  if (!isDecodable) return [];
 
-  const colorString = match[0];
-  const parsedColorString = [...colorString]
-    .map((char) => {
-      const codePoint = char.codePointAt(0);
-      if (codePoint != null && codePoint >= 0 && codePoint <= 0x10FFFF && !isNaN(codePoint)) {
-        return String.fromCodePoint(codePoint - UNICODE_OFFSET);
-      } else {
-        return '';
-      }
-    })
+  const decodedBio: string = [...bioString]
+    .map((x) =>
+      x.codePointAt(0) > 0xe0000 && x.codePointAt(0) < 0xe007f
+        ? String.fromCodePoint(x.codePointAt(0) - 0xe0000)
+        : x
+    )
     .join("");
 
-  const colors = parseColorString(parsedColorString);
-  return colors;
+  const bio: Array<number> = decodedBio
+    .match(COLOR_REGEX)
+    .filter((s) => !/\[|\]/.test(s))
+    .map((c) => parseInt(`0x${c.slice(1)}`));
+  return bio;
 };
 
 
-export function start() {
+export async function start() {
 
   const mod = webpack.getByProps(["getMutualGuilds", "getUserProfile"]);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   inject.after(mod as any, "getUserProfile", (args, res) => {
     if (res) {
-      const colours = decodeBio(res.bio);
-      res.themeColors = res.themeColors ?? colours;
+      const themeColors = decodeBio(res?.bio);
+      if (!res || !themeColors.length) return res;
+      res.themeColors = res.themeColors ?? themeColors;
       res.premiumType = 2;
+      return res;
     }
+    return res;
+  });
+
+  inject.after(const mode = webpack.getBySource('"poggermode_enabled"', { raw: true }).exports, "Z", (args, res) => {
+    inject.after(res.find(m => m.section == "Profile Customization"), "element", (args, res) => {
+      inject.after(res.props.children.props.children.find(m => m?.props?.navigateToGuildIdentitySettings), "type", (args, res) => {
+        inject.after(res.props.children.props.children[0].props.children, "type", (args, res) => {
+          inject.after(res?.props?.children?.find?.(m => Array.isArray(m?.props?.children) && m?.props?.children?.some?.(im => im?.props?.children?.toString?.()?.includes("pendingColors")))?.props?.children?.find?.(pc => pc?.props?.children?.toString?.()?.includes("pendingColors")).props, "children", (args, res) => {
+            inject.after(res, "type", (args, res) => {
+              console.log(args, res);
+              //pushing to res.props.children.props.children should work here
+              return res;
+            });
+            return res;
+          });
+          return res;
+        });
+        return res;
+      });
+      return res;
+    });
     return res;
   });
 }
